@@ -1,0 +1,3 @@
+This repo contains implementation of PHP editor features (i.e. syntax highlighting, content assist, code validation) for Orion - my Google Summer of Code 2011 project. You can find both Orion plugins and server-side code here. For more information about the project, please visit following blog:
+
+http://orion.gusak.eu/
