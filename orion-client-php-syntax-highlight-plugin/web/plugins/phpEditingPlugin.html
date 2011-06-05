@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="copyright" content="Copyright (c) IBM Corporation and others 2011.">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<script type="text/javascript" src="../orion/plugin.js"></script>
+
+<script type="text/javascript" src="../orion/styler/phpSyntaxHighlight.js"></script>
+<script type="text/javascript">
+window.onload = function() {
+	var provider = new eclipse.PluginProvider();
+
+	// Syntax highlighting for PHP
+	(function() {
+		var serviceImpl = { /* Grammar-based, so no service impl. All data is in properties */ };
+		var serviceProperties = orion.syntax.PhpSyntaxHighlight;
+		provider.registerServiceProvider("orion.edit.highlighter", serviceImpl, serviceProperties);
+	}());
+
+	// Register our editor for php
+	(function() {
+		var serviceImpl = {};
+		var serviceProperties = {
+			name: "Orion php editor",
+			href: "/edit/edit.html#${Location}",
+			validationProperties: {Name: "*.(php|php4|php3|phtml)"}
+		};
+		provider.registerServiceProvider("orion.navigate.openWith", serviceImpl, serviceProperties);
+	}());
+
+	provider.connect();
+};
+</script>
+</head>
+<body>
+</body>
+</html>

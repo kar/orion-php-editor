@@ -7,6 +7,15 @@ Directories info:
 * orion-client-php-code-validation-plugin - Orion plugin for code validation, communicates with server-side plugin
 * orion-server-php-plugin - server-side plugin (bundle) providing required functionality for client-side plugins
 
+INSTALLING
+
+To install PHP syntax highlighting in Orion:
+1. Put contents of orion-client-php-syntax-highlight-plugin/web/ into public accessible dir
+2. Symlink / move orion-client-php-syntax-highlight-plugin/web/css/default-theme.css in place of same file in org.eclipse.orion.client.core bundle in your Orion server installation
+3. Install PhpSyntaxHighlight plugin in Orion using public accessible HTML link to orion-client-php-syntax-highlight-plugin/web/plugins/phpEditingPlugin.html
+4. Orion will now open PHP files with syntax highlighting
+
+
 
 For more information about the project, please visit following blog:
 

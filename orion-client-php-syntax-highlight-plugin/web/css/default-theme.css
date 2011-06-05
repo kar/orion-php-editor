@@ -1,0 +1,127 @@
+/* Simple theme that handles our HTML styling. 
+ * A real theme would be more comprehensive
+ */
+
+.entity-name-tag /*tag name*/ {
+	color: #3f7f7f;
+}
+
+.entity-other-attribute-name {
+	color: #7f007f;
+	/*text-decoration: underline;*/
+}
+
+.punctuation-definition-comment {
+	color: #3f5fbf;
+}
+
+.string-quoted {
+	color: #2a00ff;
+	font-style: italic;
+}
+
+.comment {
+	color: green;
+}
+
+.invalid {
+	color: white;
+	background-color: red;
+}
+/*.constant {
+}
+.invalid {
+}
+.constant {
+}
+.invalid {
+}
+.keyword {
+}
+.markup {
+}
+.meta {
+}
+.storage {
+}
+.string {
+}
+.support {
+}
+.variable {
+}
+*/
+
+
+/* Theme for PHP Syntax highlighting. It's added
+ * here as Orion doesn't support custom CSS
+ * installation yet. You have to replace original
+ * default-theme.css file.
+ *
+ * This theme is a mix of syntax highlighting in
+ * Zend Studio 7 and 8.
+ * 
+ * For now, the most specific classes are used
+ * (e.g. .comment-block-php and not .comment)
+ */
+
+#clientDiv > span {
+	color: #313131;
+}
+
+.punctuation-section-embedded-begin-php, .punctuation-section-embedded-end-php {
+	color: #ff0000;
+}
+
+.punctuation-definition-comment-php, .comment-block-php {
+	color: #808080;
+}
+
+.string-quoted-double-php, .string-quoted-single-php, .string-interpolated-php {
+	color: #205b35;
+	font-style: normal;
+}
+
+.variable-other-php {
+	color: #800000;
+}
+
+.variable-other-global-php, .variable-other-global-safer-php {
+	color: #7f0055;
+	font-weight: bold;
+	font-style: italic;
+}
+
+.constant-language-php, .support-constant-core-php .support-constant-std-php {
+	color: #0000c0;
+	font-weight: bold;
+	font-style: italic;
+}
+
+.support-function-construct-php {
+	color: #0000c0;
+}
+
+.keyword-control-php, .keyword-control-exception-php, .storage-type-php, .storage-modifier-php, .keyword-control-goto-php, .keyword-operator-type-php {
+	color: #7f0055;
+	font-weight: bold;
+}
+
+.keyword-operator-logical-php, .keyword-operator-comparison-php {
+	/* No styling for operators */
+}
+
+.constant-numeric-php, .constant-numeric-octal-php, .constant-numeric-hex-php {
+	color: #ff0000;
+}
+
+.constant-character-escape-php {
+	color: #0000c0;
+}
+
+/* Color the big amount of built-in PHP functions
+ *(they are separated by categories)
+ */
+.support-function {
+	color: #0000c0;	
+}
