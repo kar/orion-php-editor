@@ -68,6 +68,24 @@ orion.syntax.PhpSyntaxHighlight = (function() {
 					"match": "(#).*?($\\n?|(?=\\?>))",
 					"name": "comment.block.php"
 				},
+				// PHPDoc
+				{
+					"begin": "/\\*\\*\\s*$",
+					"end": "\\*/",
+					"beginCaptures": {
+						"0": { "name": "punctuation.definition.comment.php" }
+					},
+					"endCaptures": {
+						"0": { "name": "punctuation.definition.comment.php" }
+					},
+					"patterns": [
+						{
+							"match": "\\@(a(bstract|uthor)|c(ategory|opyright)|example|global|internal|li(cense|nk)|pa(ckage|ram)|return|s(ee|ince|tatic|ubpackage)|t(hrows|odo)|v(ar|ersion)|uses|deprecated|final)\\b",
+							"name": "keyword.other.phpdoc.php"
+						}
+					],
+					"contentName": "comment.block.php"
+				},
 				// Comments (multi-line)
 				{
 					"begin": "/\\*",
@@ -158,6 +176,11 @@ orion.syntax.PhpSyntaxHighlight = (function() {
 					"name": "support.function.construct.php",
 					"flags": "i"
 				},
+				{
+					"match": "(__(?:call|construct|destruct|get|set|tostring|clone|set_state|sleep|wakeup|autoload|invoke|callStatic))",
+					"name": "support.function.magic.php",
+					"flags": "i"
+				},
 				// Language
 				{
 					"match": "\\s*\\b(break|c(ase|ontinue)|d(e(clare|fault)|ie|o)|e(lse(if)?|nd(declare|for(each)?|if|switch|while)|xit)|for(each)?|if|return|switch|use|while)\\b",
@@ -168,7 +191,7 @@ orion.syntax.PhpSyntaxHighlight = (function() {
 					"name": "keyword.control.exception.php"
 				},
 				{
-					"match": "\\b(new|namespace|use|((include|require)(_once)?))\\b",
+					"match": "\\b((?:require|include)(?:_once)?)\\b\\s*",
 					"name": "keyword.control.php"
 				},
 				{

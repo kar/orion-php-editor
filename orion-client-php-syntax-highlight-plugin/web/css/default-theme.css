@@ -77,6 +77,10 @@
 	color: #808080;
 }
 
+.keyword-other-phpdoc-php {
+	font-weight: bold;
+}
+
 .string-quoted-double-php, .string-quoted-single-php, .string-interpolated-php {
 	color: #205b35;
 	font-style: normal;
