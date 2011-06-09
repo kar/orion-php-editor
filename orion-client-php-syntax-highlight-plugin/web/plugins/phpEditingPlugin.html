@@ -6,7 +6,7 @@
 
 <script type="text/javascript" src="../orion/plugin.js"></script>
 
-<script type="text/javascript" src="../orion/styler/phpSyntaxHighlight.js"></script>
+<script type="text/javascript" src="../orion/editor/phpGrammar.js"></script>
 <script type="text/javascript">
 window.onload = function() {
 	var provider = new eclipse.PluginProvider();
@@ -14,7 +14,7 @@ window.onload = function() {
 	// Syntax highlighting for PHP
 	(function() {
 		var serviceImpl = { /* Grammar-based, so no service impl. All data is in properties */ };
-		var serviceProperties = orion.syntax.PhpSyntaxHighlight;
+		var serviceProperties = orion.editor.PhpGrammar;
 		provider.registerServiceProvider("orion.edit.highlighter", serviceImpl, serviceProperties);
 	}());
 
