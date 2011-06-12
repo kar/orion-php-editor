@@ -5,32 +5,28 @@ You can find both Orion plugins and server-side code here.
 
 Directories info:
 
-* orion-client-php-syntax-highlight-plugin - Orion plugin for syntax highlighting,
-  totally client-side
-* orion-client-php-content-assist-plugin - Orion plugin for content assist,
-  communicates with server-side plugin
-* orion-client-php-code-validation-plugin - Orion plugin for code validation,
-  communicates with server-side plugin
+* orion-client-php-plugin - Orion plugin for client-side php editor features,
+  (syntax highlighting, communication client-server for content assist, etc)
 * orion-server-php-plugin - server-side plugin (bundle) providing required
   functionality for client-side plugins
 
 
 INSTALLING (applies to Orion M8)
 
-To install PHP syntax highlighting in your own Orion server:
-1. Put contents of orion-client-php-syntax-highlight-plugin/web/ into public
+To install phpEditingPlugin in your own Orion server:
+1. Put contents of orion-client-php-plugin/web/ into public
    accessible dir
-2. Symlink / move orion-client-php-syntax-highlight-plugin/web/css/default-theme.css
+2. Symlink / move orion-client-php-plugin/web/css/default-theme.css
    in place of same file in org.eclipse.orion.client.core bundle in your Orion
    server installation
-3. Symlink / move orion-client-php-syntax-highlight-plugin/plugins/phpEditingPlugin.html
+3. Symlink / move orion-client-php-plugin/plugins/phpEditingPlugin.html
    into plugins/ folder in org.eclipse.orion.client.core bundle
-4. Symlink / move orion-client-php-syntax-highlight-plugin/orion/editor/phpGrammar.js
+4. Symlink / move orion-client-php-plugin/orion/editor/phpGrammar.js
    into orion/editor/ folder in org.eclipse.orion.client.editor bundle
 5. Edit web/defaults.pref file in org.eclipse.orion.client.core bundle in your Orion
    server installation. Add line "/plugins/phpEditingPlugin.html":true
 6. Install phpEditingPlugin plugin in Orion using public accessible HTML link to
-   orion-client-php-syntax-highlight-plugin/web/plugins/phpEditingPlugin.html
+   orion-client-php-plugin/web/plugins/phpEditingPlugin.html
 7. Orion will now open PHP files with syntax highlighting
 
 The plugin will be installed in permament manner, i.e. it won't be removed if you
