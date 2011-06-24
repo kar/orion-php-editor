@@ -183,7 +183,7 @@ orion.editor.PhpGrammar = (function() {
 				},
 				// Language
 				{
-					"match": "\\s*\\b(break|c(ase|ontinue)|d(e(clare|fault)|ie|o)|e(lse(if)?|nd(declare|for(each)?|if|switch|while)|xit)|for(each)?|if|return|switch|use|while)\\b",
+					"match": "\\s*\\b(break|c(ase|ontinue)|d(e(clare|fault)|ie|o)|e(lse(if)?|nd(declare|for(each)?|if|switch|while)|xit)|for(each)?|if|return|switch|use|while|new)\\b",
 					"name": "keyword.control.php"
 				},
 				{

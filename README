@@ -1,6 +1,9 @@
 This repo contains implementation of PHP editor features (i.e. syntax highlighting,
-content assist, code validation) for Orion - my Google Summer of Code 2011 project.
-You can find both Orion plugins and server-side code here.
+content assist, code validation) for Eclipse's Orion. It's a Google Summer of Code 2011 project.
+You can find both Orion plugin and server-side code (in a form of Eclipse's plugin) here.
+
+See the example installation of this source code at:
+http://oriondemo.gusak.eu:8080
 
 
 Directories info:
@@ -13,22 +16,6 @@ Directories info:
 
 INSTALLING (applies to Orion M8)
 
-To install phpEditingPlugin in your own Orion server:
-1. Put contents of orion-client-php-plugin/web/ into public
-   accessible dir
-2. Symlink / move orion-client-php-plugin/web/css/default-theme.css
-   in place of same file in org.eclipse.orion.client.core bundle in your Orion
-   server installation
-3. Symlink / move orion-client-php-plugin/plugins/phpEditingPlugin.html
-   into plugins/ folder in org.eclipse.orion.client.core bundle
-4. Symlink / move orion-client-php-plugin/orion/editor/phpGrammar.js
-   into orion/editor/ folder in org.eclipse.orion.client.editor bundle
-5. Edit web/defaults.pref file in org.eclipse.orion.client.core bundle in your Orion
-   server installation. Add line "/plugins/phpEditingPlugin.html":true
-6. Install phpEditingPlugin plugin in Orion using public accessible HTML link to
-   orion-client-php-plugin/web/plugins/phpEditingPlugin.html
-7. Orion will now open PHP files with syntax highlighting
-
 The plugin will be installed in permament manner, i.e. it won't be removed if you
 clear your storage (localStorage.clear()).
 
@@ -36,6 +23,43 @@ Note that the plugin cannot be yet installed on any server just by providing the
 plugin URL, because some files need to be replaced on server until Orion will
 support particular features. Currently these are:
 - /web/css/default-theme.css (Orion doesn't provide a way to add custom styles yet)
+
+This installaction instructions are meant only for beta testing purposes.
+
+To install phpEditingPlugin in your own Orion server:
+
+I. Syntax Highlighting
+  1. Put contents of orion-client-php-plugin/web/ into public
+     accessible dir
+  2. Symlink / move orion-client-php-plugin/web/css/default-theme.css
+     in place of same file in org.eclipse.orion.client.core bundle in your Orion
+     server installation
+  3. Symlink / move orion-client-php-plugin/plugins/phpEditingPlugin.html
+     into plugins/ folder in org.eclipse.orion.client.core bundle
+  4. Symlink / move orion-client-php-plugin/orion/editor/phpGrammar.js
+     into orion/editor/ folder in org.eclipse.orion.client.editor bundle
+  5. Edit web/defaults.pref file in org.eclipse.orion.client.core bundle in your
+     Orion  server installation. Add line "/plugins/phpEditingPlugin.html":true
+  6. Install phpEditingPlugin plugin in Orion using public accessible HTML link
+     to orion-client-php-plugin/web/plugins/phpEditingPlugin.html
+  7. Orion will now open PHP files with syntax highlighting
+
+II. Content Assist
+  1. Export eu.gusak.orion.php using Eclipse Platform in order to create .jar bundle
+  2. Edit bundles.info file from configuration/org.eclipse.equinox.simpleconfigurator
+     and add eu.gusak.orion.php plugin to the list as well as it's dependencies.
+     See the sample file in eclipse/ directory of this repo for example
+  3. Create a directory on server and upload eu.gusak.orion.php .jar file as well
+     as all dependencies, in order to match paths defined in bundles.info file
+  4. Edit plugin.xml file in plugins/org.eclipse.orion.server.configurator so
+     the PhpServlet from eu.gusak.orion.php plugin can be found (see example)
+  5. Edit MANIFEST.MF in plugins/org.eclipse.orion.server.configurator/META-INF
+     so the PhpServlet class file can be found (see example)
+  6. Start osgi server and check if the plugin is visible using command:
+     ss eu.gusak.orion.php
+  7. If the status is <<LAZY>>, start the plugin using command start ID, where
+     the plugin ID can be found in the output of previous command
+  8. Now plugin should be started and content assist feature should work in editor
 
 
 For more information about the project, please visit following blog:

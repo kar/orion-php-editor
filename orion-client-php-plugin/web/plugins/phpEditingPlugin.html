@@ -5,11 +5,20 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <script type="text/javascript" src="../orion/plugin.js"></script>
-
+<script type="text/javascript" src="../orion/editor/phpContentAssist.js"></script>
 <script type="text/javascript" src="../orion/editor/phpGrammar.js"></script>
+
+<script type="text/javascript" src="/org.dojotoolkit/dojo/dojo.js.uncompressed.js"></script>
 <script type="text/javascript">
 window.onload = function() {
 	var provider = new eclipse.PluginProvider();
+
+	// Content assist for PHP
+	(function() {
+		provider.registerServiceProvider("orion.edit.contentAssist",
+			new orion.editor.PhpContentAssistProvider(dojo), 
+			{name: "PHP content assist", pattern: "\\.php$"});
+	}());
 
 	// Syntax highlighting for PHP
 	(function() {
