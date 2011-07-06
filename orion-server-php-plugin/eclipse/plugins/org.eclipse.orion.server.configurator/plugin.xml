@@ -25,7 +25,7 @@
             alias="/php"
             class="eu.gusak.orion.php.servlets.PhpServlet">
       </servlet>
-   
+
       <servlet
             alias="/file"
             class="org.eclipse.orion.internal.server.servlets.file.NewFileServlet">
@@ -89,11 +89,43 @@
          point="org.eclipse.equinox.http.registry.filters">
       <filter
             alias="/"
-            class="org.mortbay.servlet.GzipFilter">
+            class="org.eclipse.orion.server.configurator.servlet.ExcludedExtensionGzipFilter">
+         <init-param
+               name="excludedExtensions"
+               value="jsp, jspx, gif, jpg, png">
+         </init-param>
       </filter>
       <filter
             alias="/"
-            class="org.eclipse.orion.server.configurator.servlet.ImageExpiresFilter">
+            class="org.eclipse.orion.server.configurator.servlet.CacheFilter">
+         <init-param
+               name="directives"
+               value="public, max-age=86400, must-revalidate">
+         </init-param>
+         <init-param
+               name="includeMatches"
+               value=".*[.](gif|jpg|png|bmp|tif|ico)$">
+         </init-param>
+         <init-param
+               name="excludeMatches"
+               value="^/(file|hosted)/.*">
+         </init-param>
+      </filter>
+      <filter
+            alias="/"
+            class="org.eclipse.orion.server.configurator.servlet.CacheFilter">
+         <init-param
+               name="directives"
+               value="max-age=0, must-revalidate">
+         </init-param>
+         <init-param
+               name="includeMatches"
+               value=".*[.](js|html|css)$">
+         </init-param>
+         <init-param
+               name="excludeMatches"
+               value="^/(file|hosted)/.*">
+         </init-param>
       </filter>
       <filter
             alias="/"

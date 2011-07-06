@@ -38,14 +38,9 @@ import org.json.JSONException;
 import eu.gusak.orion.internal.php.OrionPhpPlugin;
 
 /**
- * A servlet for accessing and modifying preferences.
- * GET /prefs/ to return the preferences and children of the preference root node as a JSON object (the children of the root are the scopes)
- * GET /prefs/[path] returns the preferences and children of the given preference node as a JSON object
- * GET /prefs/[path]?key=[key] returns the value of the preference in the node at the given path, with the given key, as a JSON string
- * PUT /prefs/[path] sets all the preferences at the given path to the provided JSON object
- * PUT /prefs/[path]?key=[key]&value=[value] sets the value of the preference at the given path with the given key to the provided value
- * DELETE /prefs/[path] to delete an entire preference node
- * DELETE /prefs/[path]?key=[key] to delete a single preference at the given path with the given key
+ * A servlet for accessing Orion PHP Editor functionality.
+ * GET /php/?script=[script]&offset=[offset] to return the completion proposals for a caret position placed in [offset] inside PHP [script]. PHP version: 5.3
+ * GET /php/?script=[script]&offset=[offset]&phpversion=[phpversion] same as above, but additionaly sets PHP version to 4, 5, or 53 (5.3)
  */
 public class PhpServlet extends OrionServlet {
 
@@ -158,6 +153,8 @@ public class PhpServlet extends OrionServlet {
 			int i = 0;
 			for (CompletionProposal proposal : proposals) {
 				proposalsArray[i] = proposal.getCompletion();
+//				String[] parameters = proposal.findParameterNames(null);
+//				OrionPhpPlugin.debug("Number of parameters: " + ((parameters == null) ? "none" : parameters.length));
 				++i;
 			}
 		} catch (ModelException e) {

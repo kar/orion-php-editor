@@ -23,9 +23,9 @@ Require-Bundle: org.eclipse.orion.server.servlets;bundle-version="0.1.
  ,eu.gusak.orion.php;bundle-version="1.0.0"
 Eclipse-SourceReferences: scm:git:dev.eclipse.org:/gitroot/e4/org.ecli
  pse.orion.server.git;path="bundles/org.eclipse.orion.server.configura
- tor";tag=v20110608-0200
+ tor";tag=v20110614-2222
 Bundle-Vendor: %Bundle-Vendor
-Bundle-Version: 0.2.0.v20110608-0200
+Bundle-Version: 0.2.0.v20110614-2222
 Bundle-ManifestVersion: 2
 Bundle-Activator: org.eclipse.orion.server.configurator.ConfiguratorAc
  tivator

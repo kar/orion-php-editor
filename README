@@ -29,8 +29,7 @@ This installaction instructions are meant only for beta testing purposes.
 To install phpEditingPlugin in your own Orion server:
 
 I. Syntax Highlighting
-  1. Put contents of orion-client-php-plugin/web/ into public
-     accessible dir
+  1. Put contents of orion-client-php-plugin/web/ into a dir on the server
   2. Symlink / move orion-client-php-plugin/web/css/default-theme.css
      in place of same file in org.eclipse.orion.client.core bundle in your Orion
      server installation
@@ -40,8 +39,7 @@ I. Syntax Highlighting
      into orion/editor/ folder in org.eclipse.orion.client.editor bundle
   5. Edit web/defaults.pref file in org.eclipse.orion.client.core bundle in your
      Orion  server installation. Add line "/plugins/phpEditingPlugin.html":true
-  6. Install phpEditingPlugin plugin in Orion using public accessible HTML link
-     to orion-client-php-plugin/web/plugins/phpEditingPlugin.html
+  6. You might need to issue localStorage.clear() in JS console
   7. Orion will now open PHP files with syntax highlighting
 
 II. Content Assist
