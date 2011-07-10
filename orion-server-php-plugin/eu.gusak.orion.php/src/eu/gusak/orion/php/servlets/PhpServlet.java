@@ -13,8 +13,12 @@ package eu.gusak.orion.php.servlets;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.InvalidParameterException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -33,14 +37,13 @@ import org.eclipse.dltk.core.ModelException;
 import org.eclipse.orion.server.servlets.OrionServlet;
 import org.eclipse.php.internal.core.PHPVersion;
 import org.json.JSONArray;
-import org.json.JSONException;
 
 import eu.gusak.orion.internal.php.OrionPhpPlugin;
 
 /**
  * A servlet for accessing Orion PHP Editor functionality.
- * GET /php/?script=[script]&offset=[offset] to return the completion proposals for a caret position placed in [offset] inside PHP [script]. PHP version: 5.3
- * GET /php/?script=[script]&offset=[offset]&phpversion=[phpversion] same as above, but additionaly sets PHP version to 4, 5, or 53 (5.3)
+ * GET /php/?script=[script]&offset=[offset]&prefix=[prefix] to return the completion proposals for a caret position placed in [offset] inside PHP [script]. Completion starts with [prefix]. PHP version: 5.3
+ * GET /php/?script=[script]&offset=[offset]&prefix=[prefix]&phpversion=[phpversion] same as above, but additionaly sets PHP version to 4, 5, or 53 (5.3)
  */
 public class PhpServlet extends OrionServlet {
 
@@ -91,14 +94,22 @@ public class PhpServlet extends OrionServlet {
 
 		// Read the offset (position of cursor in the editor)
 		int offset = 0;
-		String ossetString = req.getParameter("offset");
+		String offsetString = req.getParameter("offset");
 		try {
-			offset = Integer.parseInt(ossetString);
+			offset = Integer.parseInt(offsetString);
 		} catch (NumberFormatException e) {
 			handleException(resp, "No offset parameter provided", e);
 			return;
 		}
 		OrionPhpPlugin.debug("Offset: " + offset);
+
+		// Read the prefix (to compute offsets for parameters in Linked Mode)
+		String prefix = req.getParameter("prefix");
+		if (prefix == null) {
+			handleException(resp, "No prefix parameter provided", new InvalidParameterException());
+			return;
+		}
+		OrionPhpPlugin.debug("Prefix: " + prefix);
 
 		// Set PHP Version if defined
 		String versionString = req.getParameter("phpversion");
@@ -146,15 +157,23 @@ public class PhpServlet extends OrionServlet {
 
 		// Generate the proposals array
 		String[] proposalsArray = null;
+		JSONArray result = new JSONArray();
+
 		try {
 			CompletionProposal[] proposals = getProposals(DLTKCore.createSourceModuleFrom(phpFile), offset);
 			OrionPhpPlugin.debug("Number of proposals: " + proposals.length);
-			proposalsArray = new String[proposals.length];
+//			proposalsArray = new String[proposals.length];
 			int i = 0;
 			for (CompletionProposal proposal : proposals) {
-				proposalsArray[i] = proposal.getCompletion();
-//				String[] parameters = proposal.findParameterNames(null);
-//				OrionPhpPlugin.debug("Number of parameters: " + ((parameters == null) ? "none" : parameters.length));
+				String[] parameters = proposal.findParameterNames(null);
+				if (parameters == null) {
+					result.put(proposal.getCompletion());
+				} else {
+					Map<String, Object> proposalWithParameters = getProposalInfo(offset, prefix, proposal, parameters);
+					result.put(proposalWithParameters);
+				}
+
+				OrionPhpPlugin.debug("Number of parameters: " + ((parameters == null) ? "none" : parameters.length));
 				++i;
 			}
 		} catch (ModelException e) {
@@ -164,17 +183,49 @@ public class PhpServlet extends OrionServlet {
 		}
 
 		// Send the proposals in response
-		try {
-			JSONArray result = null;
-			result = new JSONArray(proposalsArray);
+//		try {
+//			JSONArray result = null;
+//			result = new JSONArray(proposalsArray);
 			writeJSONResponse(req, resp, result);
-		} catch (JSONException e) {
-			removeFile();
-			handleException(resp, "Could not send JSON response", e);
-			return;
-		}
+//		} catch (JSONException e) {
+//			removeFile();
+//			handleException(resp, "Could not send JSON response", e);
+//			return;
+//		}
 
 		removeFile();
+	}
+
+	public static Map<String, Object> getProposalInfo(int offset, String prefix, CompletionProposal proposal, String[] parameters) {
+		if (proposal.getName() == null) {
+			// TODO
+		}
+
+		String proposalWithParameters = proposal.getName() + "(";
+		List<Map<String, Integer>> positions = new ArrayList<Map<String, Integer>>();
+		int i = 0;
+		for (String parameter : parameters) {
+			Map<String, Integer> position = new HashMap<String, Integer>();
+			position.put("offset", offset - prefix.length() + proposalWithParameters.length());
+			position.put("length", parameter.length());
+			positions.add(position);
+	
+			proposalWithParameters += parameter;
+			if (i < parameters.length - 1) {
+				proposalWithParameters += ", ";
+			}
+			++i;
+		}
+		proposalWithParameters += ")";
+
+		int escapePosition = offset - prefix.length() + proposalWithParameters.length();
+
+		Map<String, Object> result = new HashMap<String, Object>();
+		result.put("proposal", proposalWithParameters);
+		result.put("escapePosition", escapePosition);
+		result.put("parametersPositions", positions);
+
+		return result;
 	}
 
 	public static CompletionProposal[] getProposals(ISourceModule sourceModule, int offset) throws ModelException {

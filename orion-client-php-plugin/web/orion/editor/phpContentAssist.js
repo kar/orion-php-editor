@@ -7,6 +7,7 @@
  *
  * Contributors:
  *     IBM Corporation - initial API and implementation
+ *     Karol Gusak
  *******************************************************************************/
 /*global orion:true*/
 
@@ -20,10 +21,14 @@ orion.editor = orion.editor || {};
 orion.editor.PhpContentAssistProvider = (function() {
 	/** @private */
 	function PhpContentAssistProvider(dojo) {
-		//this._dojo = dojo;
+
 	}
 	PhpContentAssistProvider.prototype = /** @lends orion.editor.PhpContentAssistProvider.prototype */ {
 		/**
+		 * Note: a temporary hack has been applied - this method uses selection.offset argument which is not
+		 * available by default, but was added in my modification of contentAssist.js, as the start and end
+		 * fields are not updated correctly in some cases.
+		 * 
 		 * @param {String} The string buffer.substring(w+1, c) where c is the caret offset and w is the index of the 
 		 * rightmost whitespace character preceding c.
 		 * @param {String} buffer The entire buffer being edited
@@ -31,10 +36,12 @@ orion.editor.PhpContentAssistProvider = (function() {
 		 * @returns {dojo.Deferred} A future that will provide the keywords.
 		 */
 		getKeywords: function(prefix, buffer, selection) {
+			var offset = selection.offset;
+			var key = offset + prefix + buffer;
 			var d = new dojo.Deferred();
-			var cached = null;
+			var cached = _cache.get(key);
 			if (cached !== null) {
-				d.resolve(cached[name] || {});
+				d.resolve(cached);
 			} else {
 				var that = this;
 				dojo.xhrGet({
@@ -44,30 +51,21 @@ orion.editor.PhpContentAssistProvider = (function() {
 					},
 					content: {
 						"script": buffer,
-						"offset": selection.start
+						"offset": offset,
+						"prefix": prefix
 					},
 					handleAs: "json",
 					timeout: 15000,
 					load: function(data, ioArgs) {
-						//_cache.set(key, data);
-						//that._currentPromise = null;
+						_cache.set(key, data);
 						d.resolve(data);
 					},
 					error: function(response, ioArgs) {
-						if (ioArgs.xhr.status === 401) {
-						//	mAuth.handleGetAuthenticationError(ioArgs.xhr, ioArgs);
-						} else if (ioArgs.xhr.status === 404) {
-						//	_cache.set(key, {});
-						//	that._currentPromise = null;
-							d.resolve({});
+						var data = _cache.get(key, true);
+						if (data !== null) {
+							d.resolve(data);
 						} else {
-						//	that._currentPromise = null;
-						//	var data = _cache.get(key, true);
-						//	if (data !== null) {
-						//		d.resolve(data[name] || {});
-						//	} else {
-								d.resolve({});
-						//	}
+							d.resolve({});
 						}
 					}
 				});
@@ -76,6 +74,30 @@ orion.editor.PhpContentAssistProvider = (function() {
 			return d;
 		}
 	};
+
+	var _cache = {
+			get: function(key, ignoreExpires) {
+				var item = localStorage.getItem(key);
+				if (item == null) {
+					return null;
+				}
+				var cached = JSON.parse(item);
+				if (ignoreExpires || (cached.expires && cached.expires > new Date().getTime())) {
+					return cached.data;
+				}
+				return null;
+			},
+			set: function(key, dataToCache) {
+				var cached = {
+					data: dataToCache,
+					expires: new Date().getTime() + (1000*60*60), // expire every hour
+				};
+
+				var jsonData = JSON.stringify(cached);
+				localStorage.setItem(key, jsonData);
+			}
+	};
+
 	return PhpContentAssistProvider;
 }());
 
