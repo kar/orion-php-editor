@@ -7,6 +7,7 @@
 <script type="text/javascript" src="../orion/plugin.js"></script>
 <script type="text/javascript" src="../orion/editor/phpContentAssist.js"></script>
 <script type="text/javascript" src="../orion/editor/phpGrammar.js"></script>
+<script type="text/javascript" src="../orion/editor/phpValidator.js"></script>
 
 <script type="text/javascript" src="/org.dojotoolkit/dojo/dojo.js.uncompressed.js"></script>
 <script type="text/javascript">
@@ -25,6 +26,13 @@ window.onload = function() {
 		var serviceImpl = { /* Grammar-based, so no service impl. All data is in properties */ };
 		var serviceProperties = orion.editor.PhpGrammar;
 		provider.registerServiceProvider("orion.edit.highlighter", serviceImpl, serviceProperties);
+	}());
+
+	// Problem provider for PHP
+	(function() {
+		provider.registerServiceProvider("orion.edit.validator",
+			new orion.editor.PhpValidatorProvider(dojo),
+			{pattern: "\\.php$"});
 	}());
 
 	// Register our editor for php

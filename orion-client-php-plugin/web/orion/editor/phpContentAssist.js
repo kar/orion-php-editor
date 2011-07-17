@@ -45,7 +45,7 @@ orion.editor.PhpContentAssistProvider = (function() {
 			} else {
 				var that = this;
 				dojo.xhrGet({
-					url: "/php",
+					url: "/php/contentassist/",
 					headers: {
 						"Orion-Version": "1"
 					},

@@ -14,7 +14,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -25,10 +24,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.Path;
 import org.eclipse.dltk.core.CompletionProposal;
 import org.eclipse.dltk.core.CompletionRequestor;
 import org.eclipse.dltk.core.DLTKCore;
@@ -42,8 +44,9 @@ import eu.gusak.orion.internal.php.OrionPhpPlugin;
 
 /**
  * A servlet for accessing Orion PHP Editor functionality.
- * GET /php/?script=[script]&offset=[offset]&prefix=[prefix] to return the completion proposals for a caret position placed in [offset] inside PHP [script]. Completion starts with [prefix]. PHP version: 5.3
- * GET /php/?script=[script]&offset=[offset]&prefix=[prefix]&phpversion=[phpversion] same as above, but additionaly sets PHP version to 4, 5, or 53 (5.3)
+ * GET /php/contentassist/?script=[script]&offset=[offset]&prefix=[prefix] to return the completion proposals for a caret position placed in [offset] inside PHP [script]. Completion starts with [prefix]. PHP version: 5.3
+ * GET /php/contentassist/?script=[script]&offset=[offset]&prefix=[prefix]&phpversion=[phpversion] same as above, but additionally sets PHP version to 4, 5, or 53 (5.3)
+ * GET /php/codevalidation/?script=[script]&phpversion=[phpversion] to return problem markers (if any) for particular script
  */
 public class PhpServlet extends OrionServlet {
 
@@ -83,7 +86,30 @@ public class PhpServlet extends OrionServlet {
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		traceRequest(req);
+		String pathString = req.getPathInfo();
+		if (pathString == null || pathString.equals("/")) { //$NON-NLS-1$
+			handleException(resp, "No mode defined in request URI", new InvalidParameterException());
+			return;
+		}
+		IPath path = new Path(pathString);
+		if (path.segmentCount() != 2) { // /index.html is being added
+			handleException(resp, "No mode defined in request URI", new InvalidParameterException());
+			return;
+		}
 
+		String mode = path.segment(0);
+
+		if (mode.equals("contentassist")) {
+			doGetContentAssist(req, resp);
+		} else if (mode.equals("codevalidation")) {
+			doGetCodeValidation(req, resp);
+		} else {
+			handleException(resp, "Unknown mode provided in request URI", new InvalidParameterException());
+			return;
+		}
+	}
+
+	private void doGetContentAssist(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		// Load script source
 		String script = req.getParameter("script");
 		if (script == null) {
@@ -116,7 +142,7 @@ public class PhpServlet extends OrionServlet {
 		PHPVersion phpVersion = PHPVersion.PHP5_3;
 		if (versionString != null) {
 			try {
-				int versionInt =  Integer.parseInt(versionString);
+				int versionInt = Integer.parseInt(versionString);
 
 				switch (versionInt) {
 				case 4:
@@ -125,11 +151,12 @@ public class PhpServlet extends OrionServlet {
 				case 5:
 					phpVersion = PHPVersion.PHP5;
 					break;
-				default: 
+				default:
 					phpVersion = PHPVersion.PHP5_3;
 					break;
 				}
-			} catch (NumberFormatException e) {}
+			} catch (NumberFormatException e) {
+			}
 		}
 
 		try {
@@ -153,16 +180,15 @@ public class PhpServlet extends OrionServlet {
 		}
 
 		OrionPhpPlugin.waitForIndexer();
-		// PHPCoreTests.waitForAutoBuild();
+//		OrionPhpPlugin.waitForAutoBuild();
 
 		// Generate the proposals array
-		String[] proposalsArray = null;
 		JSONArray result = new JSONArray();
 
 		try {
 			CompletionProposal[] proposals = getProposals(DLTKCore.createSourceModuleFrom(phpFile), offset);
 			OrionPhpPlugin.debug("Number of proposals: " + proposals.length);
-//			proposalsArray = new String[proposals.length];
+			// proposalsArray = new String[proposals.length];
 			int i = 0;
 			for (CompletionProposal proposal : proposals) {
 				String[] parameters = proposal.findParameterNames(null);
@@ -182,21 +208,102 @@ public class PhpServlet extends OrionServlet {
 			return;
 		}
 
-		// Send the proposals in response
-//		try {
-//			JSONArray result = null;
-//			result = new JSONArray(proposalsArray);
-			writeJSONResponse(req, resp, result);
-//		} catch (JSONException e) {
-//			removeFile();
-//			handleException(resp, "Could not send JSON response", e);
-//			return;
-//		}
+		writeJSONResponse(req, resp, result);
 
 		removeFile();
 	}
 
-	public static Map<String, Object> getProposalInfo(int offset, String prefix, CompletionProposal proposal, String[] parameters) {
+	private void doGetCodeValidation(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		// Load script source
+		String script = req.getParameter("script");
+		if (script == null) {
+			handleException(resp, "No script parameter provided", new InvalidParameterException());
+			return;
+		}
+		OrionPhpPlugin.debug("Script: " + script);
+
+		// Set PHP Version if defined
+		String versionString = req.getParameter("phpversion");
+		PHPVersion phpVersion = PHPVersion.PHP5_3;
+		if (versionString != null) {
+			try {
+				int versionInt = Integer.parseInt(versionString);
+
+				switch (versionInt) {
+				case 4:
+					phpVersion = PHPVersion.PHP4;
+					break;
+				case 5:
+					phpVersion = PHPVersion.PHP5;
+					break;
+				default:
+					phpVersion = PHPVersion.PHP5_3;
+					break;
+				}
+			} catch (NumberFormatException e) {
+			}
+		}
+
+		try {
+			OrionPhpPlugin.setProjectPhpVersion(phpVersion);
+		} catch (CoreException e) {
+			handleException(resp, "Problem with setting PHP version", e);
+			return;
+		}
+		OrionPhpPlugin.debug("PHPVersion: " + phpVersion.toString());
+
+		// Save script into file in the project and wait for build
+		try {
+			phpFile = project.getFile(FILE_NAME);
+			phpFile.create(new ByteArrayInputStream(script.getBytes()), true, null);
+			project.refreshLocal(IResource.DEPTH_INFINITE, null);
+			project.build(IncrementalProjectBuilder.FULL_BUILD, null);
+		} catch (CoreException e) {
+			removeFile();
+			handleException(resp, "Problem with saving script file", e);
+			return;
+		}
+
+		OrionPhpPlugin.waitForIndexer();
+		OrionPhpPlugin.waitForAutoBuild();
+
+		// Generate the markers array
+		JSONArray result = new JSONArray();
+		StringBuilder markersString = new StringBuilder();
+
+		IMarker[] markers;
+		try {
+			markers = phpFile.findMarkers(null, true, IResource.DEPTH_ONE);
+			for (IMarker marker : markers) {
+				markersString.append("\n[line=");
+				markersString.append(marker.getAttribute(IMarker.LINE_NUMBER));
+				markersString.append(", start=");
+				markersString.append(marker.getAttribute(IMarker.CHAR_START));
+				markersString.append(", end=");
+				markersString.append(marker.getAttribute(IMarker.CHAR_END));
+				markersString.append("] ");
+				markersString.append(marker.getAttribute(IMarker.MESSAGE)).append('\n');
+
+				Map<String, Object> markerInfo = new HashMap<String, Object>();
+				markerInfo.put("line", marker.getAttribute(IMarker.LINE_NUMBER));
+				markerInfo.put("character", marker.getAttribute(IMarker.CHAR_START));
+				markerInfo.put("charend", marker.getAttribute(IMarker.CHAR_END));
+				markerInfo.put("reason", marker.getAttribute(IMarker.MESSAGE));
+				result.put(markerInfo);
+			}
+		} catch (CoreException e) {
+			removeFile();
+			handleException(resp, "Problem with retrieving problem markers", e);
+			return;
+		}
+		OrionPhpPlugin.debug("Problem markers: " + markersString);
+
+		writeJSONResponse(req, resp, result);
+
+		removeFile();
+	}
+
+	private static Map<String, Object> getProposalInfo(int offset, String prefix, CompletionProposal proposal, String[] parameters) {
 		if (proposal.getName() == null) {
 			// TODO
 		}
@@ -228,7 +335,7 @@ public class PhpServlet extends OrionServlet {
 		return result;
 	}
 
-	public static CompletionProposal[] getProposals(ISourceModule sourceModule, int offset) throws ModelException {
+	private static CompletionProposal[] getProposals(ISourceModule sourceModule, int offset) throws ModelException {
 		final List<CompletionProposal> proposals = new LinkedList<CompletionProposal>();
 		sourceModule.codeComplete(offset, new CompletionRequestor() {
 			public void accept(CompletionProposal proposal) {
