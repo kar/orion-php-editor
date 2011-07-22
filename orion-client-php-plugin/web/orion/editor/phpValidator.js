@@ -28,7 +28,7 @@ orion.editor.PhpValidatorProvider = (function() {
 			var d = new dojo.Deferred();
 
 			var that = this;
-			dojo.xhrGet({
+			dojo.xhrPost({
 				url: "/php/codevalidation/",
 				headers: {
 					"Orion-Version": "1"

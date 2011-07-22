@@ -136,6 +136,17 @@ orion.editor.PhpGrammar = (function() {
 					"match": "(`)[^`]+(`)",
 					"name": "string.interpolated.php"
 				},
+				{
+					"contentName": "string.interpolated.php",
+					"begin": "<<<([a-zA-Z_\\x7f-\\xff][a-zA-Z0-9_\\x7f-\\xff]*)",
+					"end": "^\\1(;)?$",
+					"beginCaptures": {
+						"0": { "name": "string.interpolated.php" }
+					},
+					"endCaptures": {
+						"0": { "name" : "string.interpolated.php" }
+					}
+				},
 				// Variables
 				{
 					"match": "(\\$)((_(COOKIE|FILES|GET|POST|REQUEST))|arg(v|c))\\b",

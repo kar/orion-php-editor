@@ -44,7 +44,7 @@ orion.editor.PhpContentAssistProvider = (function() {
 				d.resolve(cached);
 			} else {
 				var that = this;
-				dojo.xhrGet({
+				dojo.xhrPost({
 					url: "/php/contentassist/",
 					headers: {
 						"Orion-Version": "1"

@@ -31,6 +31,7 @@ import org.eclipse.core.resources.IncrementalProjectBuilder;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.dltk.core.CompletionContext;
 import org.eclipse.dltk.core.CompletionProposal;
 import org.eclipse.dltk.core.CompletionRequestor;
 import org.eclipse.dltk.core.DLTKCore;
@@ -44,15 +45,14 @@ import eu.gusak.orion.internal.php.OrionPhpPlugin;
 
 /**
  * A servlet for accessing Orion PHP Editor functionality.
- * GET /php/contentassist/?script=[script]&offset=[offset]&prefix=[prefix] to return the completion proposals for a caret position placed in [offset] inside PHP [script]. Completion starts with [prefix]. PHP version: 5.3
- * GET /php/contentassist/?script=[script]&offset=[offset]&prefix=[prefix]&phpversion=[phpversion] same as above, but additionally sets PHP version to 4, 5, or 53 (5.3)
- * GET /php/codevalidation/?script=[script]&phpversion=[phpversion] to return problem markers (if any) for particular script
+ * POST /php/contentassist/ to return the completion proposals for a caret position placed in [offset] inside PHP [script]. Completion starts with [prefix]. PHP version can be set in [phpversion] (4, 5 or 53 for 5.3 - the default)
+ * POST /php/codevalidation/ to return problem markers (if any) for particular [script]. Can optionally set [phpversion]
  */
 public class PhpServlet extends OrionServlet {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final int COMPLETION_TIMEOUT = 5000;
+	private static final int COMPLETION_TIMEOUT = 300;
 
 	private static final String FILE_NAME = "script.php";
 	private static IFile phpFile;
@@ -84,7 +84,7 @@ public class PhpServlet extends OrionServlet {
 	}
 
 	@Override
-	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		traceRequest(req);
 		String pathString = req.getPathInfo();
 		if (pathString == null || pathString.equals("/")) { //$NON-NLS-1$
@@ -187,19 +187,27 @@ public class PhpServlet extends OrionServlet {
 
 		try {
 			CompletionProposal[] proposals = getProposals(DLTKCore.createSourceModuleFrom(phpFile), offset);
-			OrionPhpPlugin.debug("Number of proposals: " + proposals.length);
+//			OrionPhpPlugin.debug("Number of proposals: " + proposals.length);
 			// proposalsArray = new String[proposals.length];
 			int i = 0;
 			for (CompletionProposal proposal : proposals) {
-				String[] parameters = proposal.findParameterNames(null);
+				String[] parameters = null;
+				if (i >= 200) {
+					OrionPhpPlugin.debug("More than 200 proposals provided, ignoring");
+					break;
+				} else if (i < 100) {
+					// Do not complete parameters for more than 100 first proposals
+					parameters = proposal.findParameterNames(null);
+				}
+
 				if (parameters == null) {
 					result.put(proposal.getCompletion());
 				} else {
 					Map<String, Object> proposalWithParameters = getProposalInfo(offset, prefix, proposal, parameters);
 					result.put(proposalWithParameters);
+//					OrionPhpPlugin.debug("Number of parameters: " + parameters.length);
 				}
-
-				OrionPhpPlugin.debug("Number of parameters: " + ((parameters == null) ? "none" : parameters.length));
+	
 				++i;
 			}
 		} catch (ModelException e) {
@@ -275,7 +283,7 @@ public class PhpServlet extends OrionServlet {
 		try {
 			markers = phpFile.findMarkers(null, true, IResource.DEPTH_ONE);
 			for (IMarker marker : markers) {
-				markersString.append("\n[line=");
+				markersString.append("[line=");
 				markersString.append(marker.getAttribute(IMarker.LINE_NUMBER));
 				markersString.append(", start=");
 				markersString.append(marker.getAttribute(IMarker.CHAR_START));
