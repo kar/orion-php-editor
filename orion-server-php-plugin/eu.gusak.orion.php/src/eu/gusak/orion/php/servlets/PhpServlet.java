@@ -338,7 +338,7 @@ public class PhpServlet extends OrionServlet {
 		Map<String, Object> result = new HashMap<String, Object>();
 		result.put("proposal", proposalWithParameters);
 		result.put("escapePosition", escapePosition);
-		result.put("parametersPositions", positions);
+		result.put("positions", positions);
 
 		return result;
 	}
