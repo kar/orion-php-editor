@@ -78,6 +78,8 @@ II. Part 2 (all dirs relative to orion-server-php-plugin)
      available in the editor (to invoke press ctrl+space)
 
 
-For more information about the project, please visit following blog:
+For more information about the project, please visit the blog [1]. Especially read the introducting documentation [2] and known problems [3].
 
-http://orion.gusak.eu/
+[1] http://orion.gusak.eu/
+[2] http://orion.gusak.eu/2011/08/documentation-for-orion-php-editor-plugin/
+[3] http://orion.gusak.eu/2011/08/what-to-watch-for-while-implementing-an-orion-plugin/
