@@ -37,9 +37,10 @@ orion.editor.PhpContentAssistProvider = (function() {
 		 */
 		getKeywords: function(prefix, buffer, selection) {
 			var offset = selection.offset;
-			var key = offset + prefix + buffer;
 			var d = new dojo.Deferred();
-			var cached = _cache.get(key);
+			// Dont use cache for now
+//			var cached = _cache.get(key);
+			var cached = null;
 			if (cached !== null) {
 				d.resolve(cached);
 			} else {
@@ -57,11 +58,11 @@ orion.editor.PhpContentAssistProvider = (function() {
 					handleAs: "json",
 					timeout: 15000,
 					load: function(data, ioArgs) {
-						_cache.set(key, data);
+//						_cache.set(key, data);
 						d.resolve(data);
 					},
 					error: function(response, ioArgs) {
-						var data = _cache.get(key, true);
+//						var data = _cache.get(key, true);
 						if (data !== null) {
 							d.resolve(data);
 						} else {
