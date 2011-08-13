@@ -1,0 +1,81 @@
+diff --git a/bundles/org.eclipse.orion.client.core/web/edit/setup.js b/bundles/org.eclipse.orion.client.core/web/edit/setup.js
+index 5dbb832..d947258 100644
+--- a/bundles/org.eclipse.orion.client.core/web/edit/setup.js
++++ b/bundles/org.eclipse.orion.client.core/web/edit/setup.js
+@@ -115,7 +115,7 @@ exports.setUpEditor = function(isReadOnly){
+ 							if (providerType === "grammar") {
+ 								// TextMate styler
+ 								var grammar = providerToUse.getProperty("grammar");
+-								this.styler = new mTextMateStyler.TextMateStyler(textView, grammar);
++								this.styler = new mTextMateStyler.TextMateStyler(textView, grammar, syntaxHighlightProviders);
+ 							} else if (providerType === "parser") {
+ 								console.debug("TODO implement support for parser-based syntax highlight provider");
+ 							}
+diff --git a/bundles/org.eclipse.orion.client.editor/web/orion/editor/textMateStyler.js b/bundles/org.eclipse.orion.client.editor/web/orion/editor/textMateStyler.js
+index fc86dbe..f3383e9 100644
+--- a/bundles/org.eclipse.orion.client.editor/web/orion/editor/textMateStyler.js
++++ b/bundles/org.eclipse.orion.client.editor/web/orion/editor/textMateStyler.js
+@@ -463,14 +463,18 @@ orion.editor.RegexUtil = {
+  */
+ orion.editor.TextMateStyler = (function() {
+ 	/** @inner */
+-	function TextMateStyler(textView, grammar) {
++	function TextMateStyler(textView, grammar, syntaxHighlightProviders) {
+ 		this.initialize(textView);
+ 		// Copy the grammar since we'll mutate it
+ 		this.grammar = this.copy(grammar);
+ 		this._styles = {}; /* key: {String} scopeName, value: {String[]} cssClassNames */
+ 		this._tree = null;
+-		
+-		this.preprocess();
++
++		// Copy all known highlight providers for resolving external references
++		this.syntaxHighlightProviders = this.copy(syntaxHighlightProviders);
++		this.allGrammars = {};
++
++		this.preprocess(this.grammar);
+ 	}
+ 	orion.editor.AbstractStyler.extend(TextMateStyler, /** @lends orion.editor.TextMateStyler.prototype */ {
+ 		/** @private */
+@@ -478,8 +482,8 @@ orion.editor.TextMateStyler = (function() {
+ 			return JSON.parse(JSON.stringify(obj));
+ 		},
+ 		/** @private */
+-		preprocess: function() {
+-			var stack = [this.grammar];
++		preprocess: function(grammar) {
++			var stack = [grammar];
+ 			for (; stack.length !== 0; ) {
+ 				var rule = stack.pop();
+ 				if (rule._resolvedRule && rule._typedRule) {
+@@ -634,7 +638,29 @@ orion.editor.TextMateStyler = (function() {
+ 					// $base is only relevant when including rules from foreign grammars
+ 					throw new Error("Include \"$base\" is not supported"); 
+ 				} else {
+-					throw new Error("Include external rule \"" + name + "\" is not supported");
++					// Check if we've already preprocessed the grammar
++					if (this.allGrammars[name] !== undefined) {
++						resolved = this.allGrammars[name];
++						return resolved;
++					}
++
++					// Find the grammar, preprocess and "cache" it
++					var grammarFound = false;
++					for (var i = 0; i < this.syntaxHighlightProviders.length; ++i) {
++						var provider = this.syntaxHighlightProviders[i];
++						var grammar = provider.properties.grammar;
++						if (grammar.scopeName === name) {
++							this.preprocess(grammar);
++							this.allGrammars[name] = grammar;
++							resolved = grammar;
++							grammarFound = true;
++							break;
++						}
++					}
++
++					if (!grammarFound) {
++						throw new Error("External reference to " + name + " couldn't be resolved"); 
++					}
+ 				}
+ 			}
+ 			return resolved;

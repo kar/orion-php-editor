@@ -5,47 +5,40 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
 <script type="text/javascript" src="../orion/plugin.js"></script>
-<script type="text/javascript" src="../orion/editor/phpContentAssist.js"></script>
-<script type="text/javascript" src="../orion/editor/phpGrammar.js"></script>
-<script type="text/javascript" src="../orion/editor/phpValidator.js"></script>
-
-<script type="text/javascript" src="/org.dojotoolkit/dojo/dojo.js.uncompressed.js"></script>
+<script type="text/javascript" src="../orion/editor/webContentAssist.js"></script>
+<script type="text/javascript" src="../orion/editor/htmlGrammar.js"></script>
 <script type="text/javascript">
 window.onload = function() {
 	var provider = new eclipse.PluginProvider();
-
-	// Content assist for PHP
+	
+	// Content assist for CSS, JavaScript
 	(function() {
 		provider.registerServiceProvider("orion.edit.contentAssist",
-			new orion.editor.PhpContentAssistProvider(dojo), 
-			{name: "PHP content assist", pattern: "\\.php$"});
+			new orion.editor.CssContentAssistProvider(), 
+			{name: "CSS content assist", pattern: "\\.css$"});
+		provider.registerServiceProvider("orion.edit.contentAssist",
+			new orion.editor.JavaScriptContentAssistProvider(),
+			{name: "JavaScript content assist", pattern: "\\.js$"});
 	}());
-
-	// Syntax highlighting for PHP
+	
+	// Syntax highlighting for HTML
 	(function() {
 		var serviceImpl = { /* Grammar-based, so no service impl. All data is in properties */ };
-		var serviceProperties = orion.editor.PhpGrammar;
+		var serviceProperties = orion.editor.HtmlGrammar;
 		provider.registerServiceProvider("orion.edit.highlighter", serviceImpl, serviceProperties);
 	}());
-
-	// Problem provider for PHP
-	(function() {
-		provider.registerServiceProvider("orion.edit.validator",
-			new orion.editor.PhpValidatorProvider(dojo),
-			{pattern: "\\.php$"});
-	}());
-
-	// Register our editor for php
+	
+	// Register our editor for html, js, css, xml, java
 	(function() {
 		var serviceImpl = {};
 		var serviceProperties = {
-			name: "Orion php editor",
+			name: "Orion web editor",
 			href: "/edit/edit.html#${Location}",
-			validationProperties: {Name: "*.(php|php4|php3|phtml)"}
+			validationProperties: {Name: "*.(css|js|htm|html|txt|xml|java|php)"}
 		};
 		provider.registerServiceProvider("orion.navigate.openWith", serviceImpl, serviceProperties);
 	}());
-
+	
 	provider.connect();
 };
 </script>

@@ -1,0 +1,50 @@
+diff --git a/bundles/org.eclipse.orion.client.core/web/css/ide.css b/bundles/org.eclipse.orion.client.core/web/css/ide.css
+index 942d0a6..28066d1 100644
+--- a/bundles/org.eclipse.orion.client.core/web/css/ide.css
++++ b/bundles/org.eclipse.orion.client.core/web/css/ide.css
+@@ -477,6 +477,8 @@ a:hover {
+ 	border: 2px inset #DDD;
+ 	z-index:10;
+ 	cursor: default;
++	overflow: scroll;
++	height: 150px;
+ }
+ 
+ .contentassist .selected {
+diff --git a/bundles/org.eclipse.orion.client.editor/web/orion/editor/contentAssist.js b/bundles/org.eclipse.orion.client.editor/web/orion/editor/contentAssist.js
+index 6d668e3..7290a2f 100644
+--- a/bundles/org.eclipse.orion.client.editor/web/orion/editor/contentAssist.js
++++ b/bundles/org.eclipse.orion.client.editor/web/orion/editor/contentAssist.js
+@@ -172,6 +172,15 @@ orion.editor.ContentAssist = (function() {
+ 				}
+ 				if (child === node) {
+ 					child.className = "selected";
++					child.focus();
++					if (child.offsetTop < this.contentAssistPanel.scrollTop) {
++						// The child element is "above" the view
++						child.scrollIntoView(true);
++					} else if ((child.offsetTop + child.offsetHeight + 20) > (this.contentAssistPanel.scrollTop + this.contentAssistPanel.offsetHeight)) {
++						// The child element is "below" the bottom of the view
++						// Note: 20 in the condition is for the horizontal scrollbar height
++						child.scrollIntoView(false);
++					}
+ 				}
+ 			}
+ 		},
+@@ -286,6 +295,16 @@ orion.editor.ContentAssist = (function() {
+ 						this.contentAssistPanel.style.left = caretLocation.x + "px";
+ 						this.contentAssistPanel.style.top = caretLocation.y + "px";
+ 						this.contentAssistPanel.style.display = "block";
++						this.contentAssistPanel.scrollTop = 0;
++
++						// Make sure that the panel is never outside the viewport
++						if (caretLocation.y + this.contentAssistPanel.offsetHeight > dojo.window.getBox().h) {
++							this.contentAssistPanel.style.top = (caretLocation.y - this.contentAssistPanel.offsetHeight - this.textView.getLineHeight()) + "px";
++						}
++						if (caretLocation.x + this.contentAssistPanel.offsetWidth > dojo.window.getBox().w) {
++							this.contentAssistPanel.style.left = (dojo.window.getBox().w - this.contentAssistPanel.offsetWidth) + "px";
++						}
++
+ 						if (!this.listenerAdded) {
+ 							this.textView.addEventListener("ModelChanged", this, this.contentAssistListener.onModelChanged);
+ 							this.textView.addEventListener("Scroll", this, this.contentAssistListener.onScroll);

@@ -1,0 +1,57 @@
+diff --git a/bundles/org.eclipse.orion.client.core/web/plugins/webEditingPlugin.html b/bundles/org.eclipse.orion.client.core/web/plugins/webEditingPlugin.html
+index cc03b51..71f5ba1 100644
+--- a/bundles/org.eclipse.orion.client.core/web/plugins/webEditingPlugin.html
++++ b/bundles/org.eclipse.orion.client.core/web/plugins/webEditingPlugin.html
+@@ -34,7 +34,7 @@ window.onload = function() {
+ 		var serviceProperties = {
+ 			name: "Orion web editor",
+ 			href: "/edit/edit.html#${Location}",
+-			validationProperties: {Name: "*.(css|js|htm|html|txt|xml|java)"}
++			validationProperties: {Name: "*.(css|js|htm|html|txt|xml|java|php)"}
+ 		};
+ 		provider.registerServiceProvider("orion.navigate.openWith", serviceImpl, serviceProperties);
+ 	}());
+@@ -45,4 +45,4 @@ window.onload = function() {
+ </head>
+ <body>
+ </body>
+-</html>
+\ No newline at end of file
++</html>
+diff --git a/bundles/org.eclipse.orion.client.editor/web/orion/editor/htmlGrammar.js b/bundles/org.eclipse.orion.client.editor/web/orion/editor/htmlGrammar.js
+index 61fe067..79607bd 100644
+--- a/bundles/org.eclipse.orion.client.editor/web/orion/editor/htmlGrammar.js
++++ b/bundles/org.eclipse.orion.client.editor/web/orion/editor/htmlGrammar.js
+@@ -20,7 +20,7 @@ orion.editor = orion.editor || {};
+  * @class orion.syntax.HtmlGrammar
+  */
+ orion.editor.HtmlGrammar = (function() {
+-	var _fileTypes = [ "html", "htm" ];
++	var _fileTypes = [ "html", "htm", "php" ];
+ 	return {
+ 		/**
+ 		 * What kind of highlight provider we are.
+@@ -86,6 +86,23 @@ orion.editor.HtmlGrammar = (function() {
+ 				{ // end delimiter of open tag
+ 					"match": ">", 
+ 					"name": "entity.name.tag.html"
++				},
++				// Inline PHP code blocks
++				{
++					"begin": "<\\?(php|=)?",
++					"end": "(\\?)>",
++					"beginCaptures": {
++						"0": { "name": "punctuation.section.embedded.begin.php" }
++					},
++					"endCaptures": {
++						"0": { "name": "punctuation.section.embedded.end.php" }
++					},
++					"patterns": [
++						{
++							"include": "source.php"
++						}
++					],
++					"contentName": "comment.block.php"
+ 				} ],
+ 			"repository": {
+ 				"attrName": { // attribute name

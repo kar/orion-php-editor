@@ -15,25 +15,28 @@
 	color: #3f5fbf;
 }
 
+.punctuation-definition-string {
+	color: blue;
+}
+
 .string-quoted {
 	color: #2a00ff;
-	font-style: italic;
 }
 
 .comment {
 	color: green;
 }
 
+.constant {
+	font-weight: bold;
+}
+
 .invalid {
 	color: white;
 	background-color: red;
 }
-/*.constant {
-}
-.invalid {
-}
-.constant {
-}
+
+/*
 .invalid {
 }
 .keyword {
@@ -53,11 +56,7 @@
 */
 
 
-/* Theme for PHP Syntax highlighting. It's added
- * here as Orion doesn't support custom CSS
- * installation yet. You have to replace original
- * default-theme.css file.
- *
+/* Theme for PHP Syntax highlighting.
  * This theme is a mix of syntax highlighting in
  * Zend Studio 7 and 8.
  * 

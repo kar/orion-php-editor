@@ -22,7 +22,7 @@ orion.editor = orion.editor || {};
  * @class orion.editor.PhpGrammar
  */
 orion.editor.PhpGrammar = (function() {
-	var _fileTypes = [ "php", "php4", "php3", "phtml" ];
+	var _fileTypes = []; // phpGrammar is loaded by htmlGrammar and doesn't have to open any files by itself
 	return {
 		/**
 		 * What kind of highlight provider we are.

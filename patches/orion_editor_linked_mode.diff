@@ -1,0 +1,316 @@
+diff --git bundles/org.eclipse.orion.client.editor/web/orion/editor/contentAssist.js bundles/org.eclipse.orion.client.editor/web/orion/editor/contentAssist.js
+index 80e60c0..b6d67a8 100644
+--- bundles/org.eclipse.orion.client.editor/web/orion/editor/contentAssist.js
++++ bundles/org.eclipse.orion.client.editor/web/orion/editor/contentAssist.js
+@@ -49,6 +49,23 @@ orion.editor.ContentAssist = (function() {
+ 				this.showContentAssist(false);
+ 			}
+ 		};
++
++		/**
++		 * An array used for storing information about proposals (with optional parameters) for current
++		 * completion context. Each element looks like following object:
++		 * {
++		 *     proposal: "[proposal string]", // Contains parameters and/or brackets if it's a function/method, e.g. "test(a, b)"
++		 *     parametersPositions: [{
++		 *         offset: 10, // Offset of a start position of parameter i
++		 *         length: 3  // Length of a parameter string for parameter i
++		 *     }], // One object for each parameter; can be null
++		 *     escapePosition: 19 // Offset of a position where the caret will be placed after exiting the Linked Mode; can be null
++		 * }
++		 *
++		 * Please note that all offsets are counted from the beginning of the text buffer, not from the beginning of the proposal.
++		 */
++		this.proposalsWithParameters = [];
++
+ 		this.init();
+ 	}
+ 	ContentAssist.prototype = /** @lends orion.editor.ContentAssist.prototype */ {
+@@ -136,13 +153,47 @@ orion.editor.ContentAssist = (function() {
+ 			}
+ 			return null;
+ 		},
++		/**
++		 * Returns an index of selected proposal (instead of the proposal itself as in
++		 * the getSelected() method. Used to retrieve the parameters' info for Linked Mode.
++		 */
++		getSelectedIndex: function() {
++			var nodes = this.contentAssistPanel.childNodes;
++			for (var i=0; i < nodes.length; i++) {
++				if (nodes[i].className === "selected") {
++					return i;
++				}
++			}
++			return null;
++		},
++		/**
++		 * Inserts the proposal selected by user into the document. Sets up the Linked Mode
++		 * if parameters' information is available for the selected proposal.
++		 * 
++		 * Returns true when the Linked Mode doesn't need to be set up, or the proposal info
++		 * if it does. The returned object is just an element from this.proposalsWithParameters.
++		 */
+ 		enter: function() {
+ 			if (this.contentAssistPanel) {
+-				var proposal = this.getSelected();
++				var proposalIndex = this.getSelectedIndex();
++				if (proposalIndex === null) {
++					return false;
++				}
++
+ 				this.finishing = true;
+-				this.textView.setText(proposal.innerHTML.substring(this.prefix.length), this.textView.getCaretOffset(), this.textView.getCaretOffset());
++
++				var proposalInfo = this.proposalsWithParameters[proposalIndex];
++				var proposal = proposalInfo.proposal;
++				this.textView.setText(proposal.substring(this.prefix.length), this.textView.getCaretOffset(), this.textView.getCaretOffset());
+ 				this.showContentAssist(false);
+-				return true;
++
++				if (proposalInfo.parametersPositions === null) {
++					// There's no parameters' information available, so return true (acts like the default content assist)
++					return true;
++				} else {
++					// Otherwise return the proposal info - it'll be used by SourceCodeActions in editorFeatures.js to set up the Linked Mode
++					return proposalInfo;
++				}
+ 			}
+ 		},
+ 		click: function(e) {
+@@ -191,12 +242,49 @@ orion.editor.ContentAssist = (function() {
+ 				var proposals = [],
+ 				    buffer = this.textView.getText(),
+ 				    selection = this.textView.getSelection();
++
++				/**
++				 * Bug/feature: The selection returned by the textView doesn't seem to be updated before notifying the listeners
++				 * of onModelChanged. If the content assist is triggered by user on CTRL+SPACE, the start/end position of the
++				 * selection (i.e. the caret position) is correct. But if the user then starts to type some text (in order to
++				 * filter the completion proposals list by a prefix) - i.e. onModelChanged listeners are notified and, in turn,
++				 * this method - the selection is not up-to-date. Because of that, I just did a simple hack of adding the offset
++				 * field for selection, which is computed above and is always correct. The selection is being passed to the content
++				 * assist services which return the actual list of proposals (and my service uses the offset value instead).
++				 */
++				selection.offset = offset;
++
++				/**
++				 * The keywords array returned by content assist services can contain element of both / either formats:
++				 * - String - just a string proposal, doesn't contain any information about the parameters
++				 * - Object - an object which has additional information about the parameters and escape position (for
++				 *   the Linked Mode). The object has the same structure as the elements of this.proposalsWithParameters.
++				 */
+ 				this.getKeywords(this.prefix, buffer, selection).then(
+ 					dojo.hitch(this, function(keywords) {
++						this.proposalsWithParameters = [];
++						var proposalIndex = 0;
+ 						for (var i = 0; i < keywords.length; i++) {
+ 							var proposal = keywords[i];
+-							if (proposal.substr(0, this.prefix.length) === this.prefix) {
+-								proposals.push(proposal);
++							if (proposal.proposal == undefined) {
++								// This proposal doesn't have the parameters' information (has no proposal field, so we assume it's a string)
++								if (proposal.substr(0, this.prefix.length) === this.prefix) {
++									proposals.push(proposal);
++
++									this.proposalsWithParameters[proposalIndex] = {
++										proposal: proposal,
++										parametersPositions: null,
++										escapePosition: null,
++									};
++									++proposalIndex;
++								}
++							} else {
++								// This proposal does have the parameters' information, save it
++								if (proposal.proposal.substr(0, this.prefix.length) === this.prefix) {
++									proposals.push(proposal.proposal);
++									this.proposalsWithParameters[proposalIndex] = proposal;
++									++proposalIndex;
++								}
+ 							}
+ 						}
+ 						if (proposals.length === 0) {
+diff --git bundles/org.eclipse.orion.client.editor/web/orion/editor/editorFeatures.js bundles/org.eclipse.orion.client.editor/web/orion/editor/editorFeatures.js
+index 88da79a..4d47f91 100644
+--- bundles/org.eclipse.orion.client.editor/web/orion/editor/editorFeatures.js
++++ bundles/org.eclipse.orion.client.editor/web/orion/editor/editorFeatures.js
+@@ -576,6 +576,22 @@ orion.editor.SourceCodeActions = (function() {
+ 		this.textView = editor.getTextView();
+ 		this.undoStack = undoStack;
+ 		this.contentAssist = contentAssist;
++
++		/**
++		 * The variables used by the Linked Mode. The elements of linkedModePositions have following structure:
++		 * {
++		 *     offset: 10, // The offset of the position counted from the beginning of the text buffer
++		 *     length: 3 // The length of the position (selection)
++		 * }
++		 *
++		 * The linkedModeEscapePosition contains an offset (counted from the beginning of the text buffer) of a
++		 * position where the caret will be placed after exiting from the Linked Mode.
++		 */
++		this.linkedModeActive = false;
++		this.linkedModePositions = [];
++		this.linkedModeCurrentPositionIndex = 0;
++		this.linkedModeEscapePosition = 0;
++
+ 		this.init();
+ 	}
+ 	SourceCodeActions.prototype = {
+@@ -750,7 +766,48 @@ orion.editor.SourceCodeActions = (function() {
+ 			//Auto indent
+ 			this.textView.setAction("enter", dojo.hitch(this, function() {
+ 				if (this.contentAssist && this.contentAssist.isActive()) {
+-					return this.contentAssist.enter();
++					/**
++					 * The enter() method of contentAssist returns an object instead of boolean true if the Linked Mode
++					 * has to be set up for the selected completion proposal.
++					 */
++					var proposalInfo = this.contentAssist.enter();
++					if (proposalInfo === true) {
++						// No object returned, so don't set up the Linked Mode
++						return true;
++					} else {
++						/**
++						 * The following snippet sets up the LinkedModeModel - an object with a structure similar to the
++						 * one used in desktop Eclipse Platform. It supports many position groups. Positions (selections)
++						 * in the same group are updated synchronously. It's used for code refactoring functionality, so
++						 * it has no use yet in Orion. The structure of the LinkedModeModel is as follows:
++						 * {
++						 *     groups: [{
++						 *         positions: [{
++						 *             offset: 10, // Relative to the text buffer
++						 *             length: 3
++						 *         }]
++						 *     }],
++						 *     escapePosition: 19, // Relative to the text buffer
++						 * }
++						 */
++						var positionGroups = [];
++						for (var i = 0; i < proposalInfo.parametersPositions.length; ++i) {
++							positionGroups[i] = {
++								positions: [{
++									offset: proposalInfo.parametersPositions[i].offset,
++									length: proposalInfo.parametersPositions[i].length,
++								}]
++							};
++						}
++
++						var linkedModeModel = {
++							groups: positionGroups,
++							escapePosition: proposalInfo.escapePosition,
++						};
++
++						this.enterLinkedMode(linkedModeModel);
++						return true;
++					}
+ 				}
+ 				var selection = this.textView.getSelection();
+ 				if (selection.start === selection.end) {
+@@ -770,8 +827,106 @@ orion.editor.SourceCodeActions = (function() {
+ 				}
+ 				return false;
+ 			}));
++
++			/**
++			 * The listener which is being registered only when the Linked Mode is active. Updates position's offsets and length
++			 * on user change. Also escapes the Linked Mode if the text buffer was modified outside of the Linked Mode positions.
++			 */
++			this.linkedModeListener = {
++				onVerify: dojo.hitch(this, function(event) {
++					var changeInsideGroup = false;
++					var offsetDifference = 0;
++					for (var i = 0; i < this.linkedModePositions.length; ++i) {
++						var position = this.linkedModePositions[i];
++						if (changeInsideGroup) {
++							// The change has already been noticed, update the offsets of all positions next to the changed one
++							position.offset += offsetDifference;
++						} else if (event.start >= position.offset && event.end <= position.offset + position.length) {
++							// The change was done in the current position, update its length
++							var oldLength = position.length;
++							position.length = (event.start - position.offset) + event.text.length + (position.offset + position.length - event.end);
++							offsetDifference = position.length - oldLength;
++							changeInsideGroup = true;
++						}
++					}
++
++					if (changeInsideGroup) {
++						// Update escape position too
++						this.linkedModeEscapePosition += offsetDifference;
++					} else {
++						// The change has been done outside of the positions, exit the Linked Mode
++						this.escapeLinkedMode();
++					}
++				})
++			};
++		},
++		/**
++		 * Starts the Linked Mode, selects the first position and registers the listeners.
++		 */
++		enterLinkedMode: function(linkedModeModel) {
++			if (this.linkedModeActive) {
++				return;
++			}
++			this.linkedModeActive = true;
++
++			// NOTE: only the first position from each group is supported for now
++			this.linkedModePositions = [];
++			for (var i = 0; i < linkedModeModel.groups.length; ++i) {
++				var group = linkedModeModel.groups[i];
++				this.linkedModePositions[i] = {
++					offset: group.positions[0].offset,
++					length: group.positions[0].length
++				};
++			}
++
++			this.linkedModeEscapePosition = linkedModeModel.escapePosition;
++			this.linkedModeCurrentPositionIndex = 0;
++			this.selectTextForLinkedModePosition(this.linkedModePositions[this.linkedModeCurrentPositionIndex]);
++
++			this.textView.addEventListener("Verify", this, this.linkedModeListener.onVerify);
++
++			this.textView.setKeyBinding(new orion.textview.KeyBinding(9), "changeLinkedModePosition");
++			this.textView.setAction("changeLinkedModePosition", dojo.hitch(this, function() {
++				// Switch to the next group on TAB key
++				this.linkedModeCurrentPositionIndex = ++this.linkedModeCurrentPositionIndex % this.linkedModePositions.length;
++				this.selectTextForLinkedModePosition(this.linkedModePositions[this.linkedModeCurrentPositionIndex]);
++				return true;
++			}));
++
++			this.textView.setKeyBinding(new orion.textview.KeyBinding(27), "escapeLinkedMode");
++			this.textView.setKeyBinding(new orion.textview.KeyBinding(13), "escapeLinkedMode");
++			this.textView.setAction("escapeLinkedMode", dojo.hitch(this, function() {
++				// Cancel the Linked Mode on ESC or ENTER key
++				this.escapeLinkedMode();
++				return true;
++			}));
++
++			this.editor.reportStatus("Linked Mode entered");
++		},
++		/**
++		 * Stops the Linked Mode. Places the caret on linkedModeEscapePosition, unregisters the listeners and restores
++		 * the default actions for keys.
++		 */
++		escapeLinkedMode: function() {
++			if (!this.linkedModeActive) {
++				return;
++			}
++
++			this.linkedModeActive = false;
++			this.textView.removeEventListener("Verify", this, this.linkedModeListener.onVerify);
++			this.textView.setKeyBinding(new orion.textview.KeyBinding(9), "tab");
++			this.textView.setKeyBinding(new orion.textview.KeyBinding(13), "enter");
++			this.textView.setKeyBinding(new orion.textview.KeyBinding(27), null);
++			this.textView.setCaretOffset(this.linkedModeEscapePosition, false);
++
++			this.editor.reportStatus("Linked Mode exited");
++		},
++		/**
++		 * Updates the selection in the textView for given Linked Mode position.
++		 */
++		selectTextForLinkedModePosition: function(position) {
++			this.textView.setSelection(position.offset, position.offset + position.length);
+ 		},
+-	
+ 		cancel: function() {
+ 			return false;
+ 		},

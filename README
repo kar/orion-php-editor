@@ -12,6 +12,8 @@ Directories info:
   (syntax highlighting, communication client-server for content assist, etc)
 * orion-server-php-plugin - server-side plugin (bundle) providing required
   functionality for client-side plugins, utilizes PDT
+* patches - diff files that were submitted to Orion bugzilla for particular
+  features like Linked Mode, Multi-Mode Syntax Highlighting etc
 
 
 INSTALLING (applies to Orion 0.2 RC3)
@@ -23,8 +25,17 @@ Note that the plugin cannot be yet installed on any server just by providing the
 plugin URL, because some files need to be replaced on server until Orion will
 support particular features. Currently these are:
 - /web/css/default-theme.css (Orion doesn't provide a way to add custom styles yet)
-- /web/orion/editor/contentAssist.js (Linked Mode for content assist)
-- /web/orion/editor/editorFeatures.js (dependency of above)
+- /web/orion/editor/textMateStyler.js (multi-mode syntax highlighting)
+- /web/edit/setup.js (multi-mode syntax highlighting)
+- /web/orion/editor/htmlGrammar.js (usage of above by PHP plugin)
+- /web/plugins/webEditingPlugin.html (usage of above by PHP plugin)
+
+Note to above: mutli-mode syntax highlighting patch was accepted by Orion, and
+this feature is now (with some modifications) available in trunk. However, to
+make Orion highlight both PHP and HTML in .php files, a modification to the latter
+two files had to be done, which is not in trunk as it's plugin-specific. Most
+likely it'll be solved differently by Orion devs in the future.
+
 
 This installaction instructions are meant only for beta testing purposes. It's
 assumed that you know how to install Orion on your own machine.
@@ -32,16 +43,19 @@ assumed that you know how to install Orion on your own machine.
 To install phpEditingPlugin in your own Orion server:
 
 I. Part 1 (all dirs relative to orion-client-php-plugin)
-  1. Put web/css/default-theme.css in place of same file in
-     org.eclipse.orion.client.core bundle in your Orion server installation
-  2. Put web/plugins/phpEditingPlugin.html into web/plugins/ folder in
-     org.eclipse.orion.client.core bundle
-  3. Put all files from web/orion/editor/ into web/orion/editor/ folder in
-     org.eclipse.orion.client.editor bundle
-  4. Edit web/defaults.pref file in org.eclipse.orion.client.core bundle in your
+  1. Put org.eclipse.orion.client.core/web/css/default-theme.css in a place of
+     the same file in org.eclipse.orion.client.core bundle in your Orion server
+     installation
+  2. Put files from org.eclipse.orion.client.core/web/plugins/phpEditingPlugin.html
+     into web/plugins/ folder in org.eclipse.orion.client.core bundle
+  3. Put org.eclipse.orion.client.core/web/edit/setup.js into /web/edit/ folder
+     in org.eclipse.orion.client.core bundle
+  4. Put all files from org.eclipse.orion.client.editor/web/orion/editor/ into
+     web/orion/editor/ folder in org.eclipse.orion.client.editor bundle
+  5. Edit web/defaults.pref file in org.eclipse.orion.client.core bundle in your
      Orion server installation. Add a line "/plugins/phpEditingPlugin.html":true
-  5. You might need to issue localStorage.clear() in JS console
-  6. Orion will now syntax highlighting PHP files
+  6. You might need to issue localStorage.clear() in JS console
+  7. Orion will now syntax highlighting PHP files
 
 II. Part 2 (all dirs relative to orion-server-php-plugin)
   1. Edit web/edit/edit.html file in org.eclipse.orion.client.core bundle and replace
