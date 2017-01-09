@@ -2,9 +2,6 @@ This repo contains implementation of PHP editor features (i.e. syntax highlighti
 content assist, code validation) for Eclipse's Orion. It's a Google Summer of Code 2011 project.
 You can find both Orion plugin and server-side code (in a form of Eclipse's plugin) here.
 
-See the example demo installation of this source code at:
-http://oriondemo.gusak.eu:8080
-
 
 Directories info:
 
@@ -76,10 +73,3 @@ II. Part 2 (all dirs relative to orion-server-php-plugin)
      the plugin ID can be found in the output of previous command
   7. Now the plugin should be started and the content assist feature should be
      available in the editor (to invoke press ctrl+space)
-
-
-For more information about the project, please visit the blog [1]. Especially read the introducting documentation [2] and known problems [3].
-
-[1] http://orion.gusak.eu/
-[2] http://orion.gusak.eu/2011/08/documentation-for-orion-php-editor-plugin/
-[3] http://orion.gusak.eu/2011/08/what-to-watch-for-while-implementing-an-orion-plugin/
